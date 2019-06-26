@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Data;
 using System.Drawing;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -286,87 +287,58 @@ namespace ThongKeThiTHu
 
         private void btnThongKeTheoLop_Click(object sender, EventArgs e)
         {
-            Microsoft.Office.Interop.Excel.Application oXL;
-            Microsoft.Office.Interop.Excel._Workbook oWB;
-            Microsoft.Office.Interop.Excel._Worksheet oSheet;
-            Microsoft.Office.Interop.Excel.Range oRng;
-            object misvalue = System.Reflection.Missing.Value;
+            if(cmbLop.Text == "")
+            {
+                MessageBox.Show("Chưa có tên lớp để xuất báo cáo, vui lòng kiểm tra lại");
+                return;
+            }
+            Excel.Application xlApp = new Microsoft.Office.Interop.Excel.Application();
+
+            if (xlApp == null)
+            {
+                MessageBox.Show("Không tìm thấy công cụ văn phòng excel trên máy tính");
+                return;
+            }
+
+
+            Excel.Workbook xlWorkBook;
+            Excel.Worksheet xlWorkSheet;
+            object misValue = System.Reflection.Missing.Value;
+
+            xlWorkBook = xlApp.Workbooks.Add(misValue);
+            xlWorkSheet = (Excel.Worksheet)xlWorkBook.Worksheets.get_Item(1);
+
+
+            //Title
+            xlWorkSheet.Cells[1, 1] = string.Format("KẾT QUẢ THI THỬ ĐH KHỐI 11, LẦN 1 - Năm học: 2018 - 2019");
+
+            //Header
+            xlWorkSheet.Cells[2, 1] = "STT";
+            xlWorkSheet.Cells[2, 2] = "Lớp";
+            xlWorkSheet.Cells[2, 3] = "Họ và tên";
+            xlWorkSheet.Cells[2, 4] = "Ngày sinh";
+            xlWorkSheet.Cells[2, 5] = "Khối ĐK";
+
+            int start_col = 5;
+            Dictionary<String, int> columnOfSubject = new Dictionary<string, int>();
+            foreach (var item in kt.dsLop[cmbLop.Text].dsMonThi)
+            {
+                start_col++;
+                columnOfSubject.Add(item.Key, start_col);
+                xlWorkSheet.Cells[2, start_col] = item.Key;
+            }
             
-            //Start Excel and get Application object.
-            oXL = new Microsoft.Office.Interop.Excel.Application();
-            oXL.Visible = true;
-                
-            //Get a new workbook.
-            oWB = (Microsoft.Office.Interop.Excel._Workbook)(oXL.Workbooks.Add(""));
-                
-            oSheet = (Microsoft.Office.Interop.Excel._Worksheet)oWB.ActiveSheet;
-            
-            oSheet.Cells[1, 1] = "KẾT QUẢ THI THỬ ĐH LỚP " + cmbLop.Text + ", LẦN " + lan + " - Năm học:" + nam + " - " + (nam + 1);
-            ////Add table headers going cell by cell.
-            //oSheet.Cells[1, 1] = "First Name";
-            //oSheet.Cells[1, 2] = "Last Name";
-            //oSheet.Cells[1, 3] = "Full Name";
-            //oSheet.Cells[1, 4] = "Salary";
-            /*
-            oRng = oSheet.get_Range("C2", "C6");
-            oRng.Formula = "";
-            */
-            oRng = oSheet.Range["A2", "A6"];
-            ////Format A1:D1 as bold, vertical alignment = center.
-            //oSheet.get_Range("A1", "D1").Font.Bold = true;
-            //oSheet.get_Range("A1", "D1").VerticalAlignment =
-            //    Microsoft.Office.Interop.Excel.XlVAlign.xlVAlignCenter;
 
-            //// Create an array to multiple values at once.
-            //string[,] saNames = new string[5, 2];
+            xlWorkBook.SaveAs("Report.xls", Excel.XlFileFormat.xlWorkbookNormal, misValue, misValue, misValue, misValue, Excel.XlSaveAsAccessMode.xlExclusive, misValue, misValue, misValue, misValue, misValue);
+            xlWorkBook.Close(true, misValue, misValue);
 
-            //saNames[0, 0] = "John";
-            //saNames[0, 1] = "Smith";
-            //saNames[1, 0] = "Tom";
+            MessageBox.Show("File excel được lưu trong thư mục chứa phần mềm. Tên file: Report.xls");
+            xlApp.Quit();
 
-            //saNames[4, 1] = "Johnson";
+            Marshal.ReleaseComObject(xlWorkSheet);
+            Marshal.ReleaseComObject(xlWorkBook);
+            Marshal.ReleaseComObject(xlApp);
 
-            ////Fill A2:B6 with an array of values (First and Last Names).
-            //oSheet.get_Range("A2", "B6").Value2 = saNames;
-
-            ////Fill C2:C6 with a relative formula (=A2 & " " & B2).
-            //oRng = oSheet.get_Range("C2", "C6");
-            //oRng.Formula = "=A2 & \" \" & B2";
-
-            ////Fill D2:D6 with a formula(=RAND()*100000) and apply format.
-            //oRng = oSheet.get_Range("D2", "D6");
-            //oRng.Formula = "=RAND()*100000";
-            //oRng.NumberFormat = "$0.00";
-
-            ////AutoFit columns A:D.
-            //oRng = oSheet.get_Range("A1", "D1");
-            //oRng.EntireColumn.AutoFit();
-
-            oXL.Visible = true;
-            oXL.UserControl = false;
-            //oWB.SaveAs("c:\\test\\test505.xls", Microsoft.Office.Interop.Excel.XlFileFormat.xlWorkbookDefault, Type.Missing, Type.Missing,
-            //    false, false, Microsoft.Office.Interop.Excel.XlSaveAsAccessMode.xlNoChange,
-            //    Type.Missing, Type.Missing, Type.Missing, Type.Missing, Type.Missing);
-
-            //oWB.OpenLinks("11A1.1");
-            //oWB.ToggleFormsDesign();
-
-
-            //oWB.Save();
-            //oWB.Close();
-            //oXL.Quit();
-
-            //Khử hết đối tượng
-            oXL.WorkbookBeforeClose += OXL_WorkbookBeforeClose;
-
-
-        }
-
-        private void OXL_WorkbookBeforeClose(Excel.Workbook Wb, ref bool Cancel)
-        {
-            Wb.Close();
-            
-            System.Runtime.InteropServices.Marshal.ReleaseComObject(Wb);
         }
     }
 }
