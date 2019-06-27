@@ -14,6 +14,12 @@ namespace ThongKeThiTHu
 {
     public partial class frmMain : Form
     {
+        object GetRange(int row, int col)
+        {
+            char c = (char)(row + 64);
+            return c + col.ToString();
+        }
+
         KyThi kt;
         int nam, lan;
         //TOAN	SU	ANH	LI	DIA	HOA	SINH	VAN
@@ -319,21 +325,85 @@ namespace ThongKeThiTHu
             xlWorkSheet.Cells[2, 4] = "Ngày sinh";
             xlWorkSheet.Cells[2, 5] = "Khối ĐK";
 
-            int start_col = 5;
+            int start_col = 6;
             Dictionary<String, int> columnOfSubject = new Dictionary<string, int>();
             foreach (var item in kt.dsLop[cmbLop.Text].dsMonThi)
             {
-                start_col++;
                 columnOfSubject.Add(item.Key, start_col);
                 xlWorkSheet.Cells[2, start_col] = item.Key;
+                start_col++;
             }
-            
+            Dictionary<string, int> columnOfGrade = new Dictionary<string, int>();
 
-            xlWorkBook.SaveAs("Report.xls", Excel.XlFileFormat.xlWorkbookNormal, misValue, misValue, misValue, misValue, Excel.XlSaveAsAccessMode.xlExclusive, misValue, misValue, misValue, misValue, misValue);
-            xlWorkBook.Close(true, misValue, misValue);
+            #region Check Grade
+            if(KiemTraKhoiThi.KiemTraKhoiB(columnOfSubject))
+            {
+                columnOfGrade["B"] = start_col;
+                xlWorkSheet.Cells[2, start_col++] = "Tổng B";
+                xlWorkSheet.Cells[2, start_col++] = "TB B";
+                xlWorkSheet.Cells[2, start_col++] = "Hạng B";
+            }
+            if (KiemTraKhoiThi.KiemTraKhoiA(columnOfSubject))
+            {
+                columnOfGrade["A"] = start_col;
+                xlWorkSheet.Cells[2, start_col++] = "Tổng A";
+                xlWorkSheet.Cells[2, start_col++] = "TB A";
+                xlWorkSheet.Cells[2, start_col++] = "Hạng A";
+            }
+            if (KiemTraKhoiThi.KiemTraKhoiA1(columnOfSubject))
+            {
+                columnOfGrade["A1"] = start_col;
+                xlWorkSheet.Cells[2, start_col++] = "Tổng A1";
+                xlWorkSheet.Cells[2, start_col++] = "TB A1";
+                xlWorkSheet.Cells[2, start_col++] = "Hạng A1";
+            }
+            if (KiemTraKhoiThi.KiemTraKhoiC(columnOfSubject))
+            {
+                columnOfGrade["C"] = start_col;
+                xlWorkSheet.Cells[2, start_col++] = "Tổng C";
+                xlWorkSheet.Cells[2, start_col++] = "TB C";
+                xlWorkSheet.Cells[2, start_col++] = "Hạng C";
+            }
+            if (KiemTraKhoiThi.KiemTraKhoiD(columnOfSubject))
+            {
+                columnOfGrade["D"] = start_col;
+                xlWorkSheet.Cells[2, start_col++] = "Tổng D";
+                xlWorkSheet.Cells[2, start_col++] = "TB D";
+                xlWorkSheet.Cells[2, start_col++] = "Hạng D";
+            }
+            #endregion
 
-            MessageBox.Show("File excel được lưu trong thư mục chứa phần mềm. Tên file: Report.xls");
-            xlApp.Quit();
+            //Duyệt qua từng thí sinh
+            #region Ghi tung thi sinh
+            Dictionary<string, ThiSinh> result = new Dictionary<string, ThiSinh>(kt.dsLop[cmbLop.Text].dsThiSinh);
+            int start_row = 3;
+            foreach (var item in result)
+            {
+                xlWorkSheet.Cells[start_row, 1] = start_row - 2;
+                xlWorkSheet.Cells[start_row, 2] = item.Value.lop;
+                xlWorkSheet.Cells[start_row, 3] = item.Value.ho + " " + item.Value.ten;
+                xlWorkSheet.Cells[start_row, 4] = item.Value.ngaySinh;
+                xlWorkSheet.Cells[start_row, 5] = item.Value.dangky;
+
+                foreach (var subject in columnOfSubject)
+                {
+                    if(item.Value.diem.ContainsKey(subject.Key))
+                    {
+                        xlWorkSheet.Cells[start_row, subject.Value] = item.Value.diem[subject.Key];
+                    }
+                }
+                
+                start_row++;
+            }
+            #endregion
+
+            xlApp.Visible = true;
+
+            //xlWorkBook.SaveAs("Report.xls", Excel.XlFileFormat.xlWorkbookNormal, misValue, misValue, misValue, misValue, Excel.XlSaveAsAccessMode.xlExclusive, misValue, misValue, misValue, misValue, misValue);
+            //xlWorkBook.Close(true, misValue, misValue);
+
+            //MessageBox.Show("File excel được lưu trong thư mục chứa phần mềm. Tên file: Report.xls");
+            //xlApp.Quit();
 
             Marshal.ReleaseComObject(xlWorkSheet);
             Marshal.ReleaseComObject(xlWorkBook);
